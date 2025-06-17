@@ -82,10 +82,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: Content::class, mappedBy: 'author')]
     private Collection $contents;
 
+    /**
+     * @var Collection<int, Report>
+     */
+    #[ORM\OneToMany(targetEntity: Report::class, mappedBy: 'author')]
+    private Collection $reports;
+
     public function __construct()
     {
         $this->uid = Uuid::v4()->toRfc4122(); // ← string, 36 caractères, format UUID standard
         $this->contents = new ArrayCollection();
+        $this->reports = new ArrayCollection();
     }
 
     public function getUid(): ?string
@@ -162,6 +169,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             // set the owning side to null (unless already changed)
             if ($content->getAuthor() === $this) {
                 $content->setAuthor(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Report>
+     */
+    public function getReports(): Collection
+    {
+        return $this->reports;
+    }
+
+    public function addReport(Report $report): static
+    {
+        if (!$this->reports->contains($report)) {
+            $this->reports->add($report);
+            $report->setAuthor($this);
+        }
+
+        return $this;
+    }
+
+    public function removeReport(Report $report): static
+    {
+        if ($this->reports->removeElement($report)) {
+            // set the owning side to null (unless already changed)
+            if ($report->getAuthor() === $this) {
+                $report->setAuthor(null);
             }
         }
 
