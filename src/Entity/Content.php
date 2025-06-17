@@ -7,6 +7,7 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use App\Api\ContentProcessor;
@@ -25,6 +26,11 @@ use Symfony\Component\Uid\Ulid;
         new GetCollection(),
         new Get(uriTemplate: '/contents/{slug}', uriVariables: ['slug']),
         new Put(uriTemplate: '/contents/{slug}', uriVariables: ['slug']),
+        new Patch(
+            uriTemplate: '/contents/{slug}',
+            uriVariables: ['slug'],
+            security: "object.getAuthor() === user"
+        ),
         new Delete(uriTemplate: '/contents/{slug}', uriVariables: ['slug']),
     ],
     normalizationContext: ['groups' => ['content:read']],
