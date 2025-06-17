@@ -15,14 +15,12 @@ use App\Repository\ContentRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
-use Symfony\Component\Uid\Ulid;
+use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: ContentRepository::class)]
 #[ApiResource(
     operations: [
-        new Post(
-            processor: ContentProcessor::class
-        ),
+        new Post(processor: ContentProcessor::class),
         new GetCollection(),
         new Get(uriTemplate: '/contents/{slug}', uriVariables: ['slug']),
         new Put(uriTemplate: '/contents/{slug}', uriVariables: ['slug']),
@@ -40,7 +38,7 @@ class Content
 {
     public function __construct()
     {
-        $this->uid = new Ulid();
+        $this->uid = Uuid::v4()->toRfc4122(); // string UUID (comme pour User)
     }
 
     #[ORM\Id]
@@ -49,9 +47,9 @@ class Content
     #[Groups(['content:read', 'content:write'])]
     private ?string $slug = null;
 
-    #[ORM\Column(type: 'ulid', unique: true)]
+    #[ORM\Column(type: 'string', length: 36, unique: true)]
     #[Groups(['content:read'])]
-    private ?Ulid $uid = null;
+    private ?string $uid = null;
 
     #[ORM\Column(length: 255)]
     #[Groups(['content:read', 'content:write'])]
@@ -78,7 +76,7 @@ class Content
         return $this;
     }
 
-    public function getUid(): ?Ulid
+    public function getUid(): ?string
     {
         return $this->uid;
     }
@@ -113,7 +111,6 @@ class Content
     public function setAuthor(?User $author): static
     {
         $this->author = $author;
-
         return $this;
     }
 }
