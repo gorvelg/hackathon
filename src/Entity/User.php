@@ -2,63 +2,100 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\ApiProperty;
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
 use App\Api\ApiRegisterController;
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
-use ApiPlatform\Metadata\ApiResource;
-use ApiPlatform\Metadata\Post;
-use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Serializer\Annotation\Groups;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\Uid\Uuid;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
-#[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
 #[UniqueEntity(fields: ['email'], message: 'There is already an account with this email')]
 #[ApiResource(
-    operations:[
+    operations: [
+        new GetCollection(
+            uriTemplate: '/users',
+            normalizationContext: ['groups' => ['user:read']],
+            security: "is_granted('ROLE_ADMIN')"
+        ),
+        new Get(
+            uriTemplate: '/users/{uid}',
+            security: "is_granted('ROLE_USER')"
+        ),
         new Post(
             uriTemplate: '/user/register',
             controller: ApiRegisterController::class,
             description: 'Inscription d\'un utilisateur',
+            normalizationContext: ['groups' => ['user:read']],
             denormalizationContext: ['groups' => ['user:write']],
             name: 'api_register'
         ),
-    ]
+        new Patch(
+            uriTemplate: '/users/{uid}',
+            normalizationContext: ['groups' => ['user:read']],
+            denormalizationContext: ['groups' => ['user:write']],
+            security: "is_granted('ROLE_USER') and object.getUid() === user.getUid()"
+        ),
+    ],
+    normalizationContext: ['groups' => ['user:read']],
+    denormalizationContext: ['groups' => ['user:write']],
 )]
-
+#[ApiFilter(SearchFilter::class, properties: ['uid' => 'exact'])]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id = null;
+    #[ORM\Column(type: 'string', length: 36, unique: true)]
+    #[ApiProperty(identifier: true)]
+    #[Groups(['user:read'])]
+    private ?string $uid = null;
 
-    #[ORM\Column(length: 180)]
-    #[Groups(['user:write'])]
-    #[Assert\NotBlank()]
-    #[Assert\Email()]
+    #[ORM\Column(length: 180, unique: true)]
+    #[Groups(['user:read', 'user:write'])]
+    #[Assert\NotBlank]
+    #[Assert\Email]
     private ?string $email = null;
-    /**
-     * @var list<string> The user roles
-     */
+
     #[ORM\Column]
     private array $roles = [];
 
-    /**
-     * @var string The hashed password
-     */
     #[ORM\Column]
     #[Groups(['user:write'])]
-    #[Assert\NotBlank()]
+    #[Assert\NotBlank]
     private ?string $password = null;
 
-    public function getId(): ?int
+    /**
+     * @var Collection<int, Content>
+     */
+    #[ORM\OneToMany(targetEntity: Content::class, mappedBy: 'author')]
+    private Collection $contents;
+
+    public function __construct()
     {
-        return $this->id;
+        $this->uid = Uuid::v4()->toRfc4122(); // ← string, 36 caractères, format UUID standard
+        $this->contents = new ArrayCollection();
+    }
+
+    public function getUid(): ?string
+    {
+        return $this->uid;
+    }
+
+    public function getUserIdentifier(): string
+    {
+        return (string) $this->email;
     }
 
     public function getEmail(): ?string
@@ -69,45 +106,22 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setEmail(string $email): static
     {
         $this->email = $email;
-
         return $this;
     }
 
-    /**
-     * A visual identifier that represents this user.
-     *
-     * @see UserInterface
-     */
-    public function getUserIdentifier(): string
-    {
-        return (string) $this->email;
-    }
-
-    /**
-     * @see UserInterface
-     */
     public function getRoles(): array
     {
         $roles = $this->roles;
-        // guarantee every user at least has ROLE_USER
         $roles[] = 'ROLE_USER';
-
         return array_unique($roles);
     }
 
-    /**
-     * @param list<string> $roles
-     */
     public function setRoles(array $roles): static
     {
         $this->roles = $roles;
-
         return $this;
     }
 
-    /**
-     * @see PasswordAuthenticatedUserInterface
-     */
     public function getPassword(): ?string
     {
         return $this->password;
@@ -116,16 +130,41 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setPassword(string $password): static
     {
         $this->password = $password;
+        return $this;
+    }
+
+    public function eraseCredentials(): void
+    {
+        // Optional: clear sensitive temporary data here
+    }
+
+    /**
+     * @return Collection<int, Content>
+     */
+    public function getContents(): Collection
+    {
+        return $this->contents;
+    }
+
+    public function addContent(Content $content): static
+    {
+        if (!$this->contents->contains($content)) {
+            $this->contents->add($content);
+            $content->setAuthor($this);
+        }
 
         return $this;
     }
 
-    /**
-     * @see UserInterface
-     */
-    public function eraseCredentials(): void
+    public function removeContent(Content $content): static
     {
-        // If you store any temporary, sensitive data on the user, clear it here
-        // $this->plainPassword = null;
+        if ($this->contents->removeElement($content)) {
+            // set the owning side to null (unless already changed)
+            if ($content->getAuthor() === $this) {
+                $content->setAuthor(null);
+            }
+        }
+
+        return $this;
     }
 }
