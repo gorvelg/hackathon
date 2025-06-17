@@ -55,6 +55,12 @@ class Content
     #[Groups(['content:read', 'content:write'])]
     private ?string $body = null;
 
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'contents')]
+    #[ORM\JoinColumn(name: 'author_uid', referencedColumnName: 'uid', nullable: false)]
+    #[ApiProperty(writable: false)]
+    #[Groups(['content:read'])]
+    private ?User $author = null;
+
     public function getSlug(): ?string
     {
         return $this->slug;
@@ -90,6 +96,18 @@ class Content
     public function setBody(string $body): static
     {
         $this->body = $body;
+        return $this;
+    }
+
+    public function getAuthor(): ?User
+    {
+        return $this->author;
+    }
+
+    public function setAuthor(?User $author): static
+    {
+        $this->author = $author;
+
         return $this;
     }
 }

@@ -12,6 +12,8 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\Api\ApiRegisterController;
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
@@ -74,9 +76,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Assert\NotBlank]
     private ?string $password = null;
 
+    /**
+     * @var Collection<int, Content>
+     */
+    #[ORM\OneToMany(targetEntity: Content::class, mappedBy: 'author')]
+    private Collection $contents;
+
     public function __construct()
     {
         $this->uid = Uuid::v4()->toRfc4122(); // ← string, 36 caractères, format UUID standard
+        $this->contents = new ArrayCollection();
     }
 
     public function getUid(): ?string
@@ -127,5 +136,35 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function eraseCredentials(): void
     {
         // Optional: clear sensitive temporary data here
+    }
+
+    /**
+     * @return Collection<int, Content>
+     */
+    public function getContents(): Collection
+    {
+        return $this->contents;
+    }
+
+    public function addContent(Content $content): static
+    {
+        if (!$this->contents->contains($content)) {
+            $this->contents->add($content);
+            $content->setAuthor($this);
+        }
+
+        return $this;
+    }
+
+    public function removeContent(Content $content): static
+    {
+        if ($this->contents->removeElement($content)) {
+            // set the owning side to null (unless already changed)
+            if ($content->getAuthor() === $this) {
+                $content->setAuthor(null);
+            }
+        }
+
+        return $this;
     }
 }
