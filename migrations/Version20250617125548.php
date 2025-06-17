@@ -10,7 +10,7 @@ use Doctrine\Migrations\AbstractMigration;
 /**
  * Auto-generated Migration: Please modify to your needs!
  */
-final class Version20250617122434 extends AbstractMigration
+final class Version20250617125548 extends AbstractMigration
 {
     public function getDescription(): string
     {
@@ -21,16 +21,7 @@ final class Version20250617122434 extends AbstractMigration
     {
         // this up() migration is auto-generated, please modify it to your needs
         $this->addSql(<<<'SQL'
-            ALTER TABLE user MODIFY id INT NOT NULL
-        SQL);
-        $this->addSql(<<<'SQL'
-            DROP INDEX `primary` ON user
-        SQL);
-        $this->addSql(<<<'SQL'
-            ALTER TABLE user ADD uid BINARY(16) NOT NULL COMMENT '(DC2Type:ulid)', DROP id
-        SQL);
-        $this->addSql(<<<'SQL'
-            ALTER TABLE user ADD PRIMARY KEY (uid)
+            ALTER TABLE user CHANGE uid uid VARCHAR(36) NOT NULL
         SQL);
     }
 
@@ -38,7 +29,7 @@ final class Version20250617122434 extends AbstractMigration
     {
         // this down() migration is auto-generated, please modify it to your needs
         $this->addSql(<<<'SQL'
-            ALTER TABLE user ADD id INT AUTO_INCREMENT NOT NULL, DROP uid, DROP PRIMARY KEY, ADD PRIMARY KEY (id)
+            ALTER TABLE user CHANGE uid uid BINARY(16) NOT NULL COMMENT '(DC2Type:uuid)'
         SQL);
     }
 }
