@@ -2,6 +2,10 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiProperty;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
 use App\Api\ApiRegisterController;
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
@@ -10,6 +14,7 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Post;
+use Symfony\Component\Uid\Ulid;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -20,22 +25,42 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 #[UniqueEntity(fields: ['email'], message: 'There is already an account with this email')]
 #[ApiResource(
     operations:[
+        new GetCollection(
+            uriTemplate: '/users',
+            normalizationContext: ['groups' => ['user:read']],
+            security: "is_granted('ROLE_ADMIN')"
+        ),
+        new Get(
+            uriTemplate: '/users/{uid}',
+            security: "is_granted('ROLE_USER')"
+        ),
         new Post(
             uriTemplate: '/user/register',
             controller: ApiRegisterController::class,
             description: 'Inscription d\'un utilisateur',
+            normalizationContext: ['groups' => ['user:read']],
             denormalizationContext: ['groups' => ['user:write']],
             name: 'api_register'
+        ),
+        new Patch(
+            uriTemplate: '/users/{uid}',
+            normalizationContext: ['groups' => ['user:read']],
+            denormalizationContext: ['groups' => ['user:write']],
+            security: "is_granted('ROLE_USER') and object.getUid() === user.getUid()"
         ),
     ]
 )]
 
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
+    public function __construct()
+    {
+        $this->uid = new Ulid();
+    }
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id = null;
+    #[ORM\Column(type: 'ulid', unique: true)]
+    #[ApiProperty(identifier: true)]
+    private ?Ulid $uid = null;
 
     #[ORM\Column(length: 180)]
     #[Groups(['user:write'])]

@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
@@ -11,6 +12,8 @@ use ApiPlatform\Metadata\Put;
 use App\Repository\ContentRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Uid\Ulid;
 
 #[ORM\Entity(repositoryClass: ContentRepository::class)]
 #[ApiResource]
@@ -25,10 +28,15 @@ use Doctrine\ORM\Mapping as ORM;
 )]
 class Content
 {
+    public function __construct()
+    {
+        $this->uid = (new Ulid())->toBase32();
+    }
+
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id = null;
+    #[ORM\Column(type: 'ulid', unique: true)]
+    #[ApiProperty(identifier: true)]
+    private ?Ulid $uid = null;
 
     #[ORM\Column(length: 255)]
     private ?string $title = null;
@@ -78,5 +86,10 @@ class Content
         $this->slug = $slug;
 
         return $this;
+    }
+
+    public function getUid(): ?Ulid
+    {
+        return $this->uid;
     }
 }
