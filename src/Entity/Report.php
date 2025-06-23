@@ -59,6 +59,9 @@ class Report
     #[Groups(['report:read'])]
     private ?User $author = null;
 
+    #[ORM\Column(length: 255)]
+    private ?string $location = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -108,6 +111,18 @@ class Report
     public function setAuthor(?User $author): static
     {
         $this->author = $author;
+
+        return $this;
+    }
+
+    public function getLocation(): ?string
+    {
+        return $this->location;
+    }
+
+    public function setLocation(string $location): static
+    {
+        $this->location = $location;
 
         return $this;
     }
