@@ -60,6 +60,7 @@ class Report
     private ?User $author = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['report:read', 'report:write'])]
     private ?string $location = null;
 
     public function getId(): ?int
