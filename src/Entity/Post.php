@@ -9,7 +9,7 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Put;
-use App\Api\ContentProcessor;
+use App\Api\PostProcessor;
 use App\Repository\PostRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -19,7 +19,7 @@ use Symfony\Component\Uid\Uuid;
 #[ORM\Entity(repositoryClass: PostRepository::class)]
 #[ApiResource(
     operations: [
-        new \ApiPlatform\Metadata\Post(processor: ContentProcessor::class),
+        new \ApiPlatform\Metadata\Post(processor: PostProcessor::class),
         new GetCollection(),
         new Get(uriTemplate: '/contents/{uid}', uriVariables: ['uid']),
         new Put(uriTemplate: '/contents/{uid}', uriVariables: ['uid']),
