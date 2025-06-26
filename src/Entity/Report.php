@@ -20,13 +20,12 @@ use Symfony\Component\Serializer\Attribute\Groups;
     operations: [
         new GetCollection(),
         new Get(),
-        new Post(processor: ReportProcessor::class),
+        new Post(security: "is_granted('ROLE_USER')", processor: ReportProcessor::class),
         new Patch(security: "object.getAuthor() === user"),
         new Delete(security: "object.getAuthor() === user"),
     ],
     normalizationContext: ['groups' => ['report:read']],
-    denormalizationContext: ['groups' => ['report:write']],
-    security: "is_granted('ROLE_USER')"
+    denormalizationContext: ['groups' => ['report:write']]
 )]
 class Report
 {
