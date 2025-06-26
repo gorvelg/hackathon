@@ -40,6 +40,7 @@ class Post
         $this->uid = Uuid::v4()->toRfc4122();
     }
 
+    #[ORM\Id]
     #[ORM\Column(type: 'string', length: 36, unique: true)]
     #[Groups(['post:read'])]
     private ?string $uid = null;
