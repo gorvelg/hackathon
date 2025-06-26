@@ -23,7 +23,7 @@ use Symfony\Component\Uid\Uuid;
         new Post(processor: ContentProcessor::class),
         new GetCollection(),
         new Get(uriTemplate: '/contents/{slug}', uriVariables: ['slug']),
-        new Put(uriTemplate: '/contents/{slug}', uriVariables: ['slug']),
+        new Put(uriTemplate: '/contents/{slug}', uriVariables: ['slug'], security: "object.getAuthor() === user"),
         new Patch(
             uriTemplate: '/contents/{slug}',
             uriVariables: ['slug'],

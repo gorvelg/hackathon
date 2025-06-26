@@ -21,9 +21,9 @@ use Symfony\Component\Uid\Uuid;
 #[ApiResource(
     operations: [
         new GetCollection(),
-        new PostOperation(processor: PostProcessor::class),
+        new PostOperation(security: "is_granted('ROLE_USER')", processor: PostProcessor::class),
         new Get(uriTemplate: '/contents/{uid}', uriVariables: ['uid']),
-        new Put(uriTemplate: '/contents/{uid}', uriVariables: ['uid']),
+        new Put(uriTemplate: '/contents/{uid}', uriVariables: ['uid'], security: "object.getAuthor() === user"),
         new Patch(
             uriTemplate: '/contents/{uid}',
             uriVariables: ['uid'],
