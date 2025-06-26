@@ -9,7 +9,8 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
-use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Post as PostOperation;
+use App\Entity\Post;
 use App\Api\ApiRegisterController;
 use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -35,7 +36,7 @@ use Symfony\Component\Validator\Constraints as Assert;
             uriTemplate: '/users/{uid}',
             security: "is_granted('ROLE_USER')"
         ),
-        new Post(
+        new PostOperation(
             uriTemplate: '/user/register',
             controller: ApiRegisterController::class,
             description: 'Inscription d\'un utilisateur',
