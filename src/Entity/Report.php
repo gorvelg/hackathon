@@ -14,6 +14,7 @@ use App\Repository\ReportRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
+use App\Validator as CustomAssert;
 
 #[ORM\Entity(repositoryClass: ReportRepository::class)]
 #[ApiResource(
@@ -45,6 +46,7 @@ class Report
 
     #[ORM\Column(type: Types::TEXT)]
     #[Groups(['report:read', 'report:write'])]
+    #[CustomAssert\NoDangerousHtml()]
     private ?string $description = null;
 
     #[ORM\Column(length: 255)]
